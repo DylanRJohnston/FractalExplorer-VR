@@ -4,6 +4,11 @@ using UnityEngine;
 using UnityEngine.XR;
 using UnityEngine.XR.Interaction.Toolkit;
 
+// class DeviceEvents {
+//   DeviceEvents()
+// }
+
+
 public class SphereContoller : MonoBehaviour
 {
   // Start is called before the first frame update
@@ -12,6 +17,8 @@ public class SphereContoller : MonoBehaviour
 
   public XRController leftController = null;
   private InputDevice leftDevice;
+
+  public XRRig rig = null;
 
 
   void Start()
@@ -23,69 +30,45 @@ public class SphereContoller : MonoBehaviour
 
   // Update is called once per frame
 
-  Vector3 leftStartingHandPosition = new Vector3(0, 0, 0);
-  Vector3 rightStartingHandPosition = new Vector3(0, 0, 0);
-  Vector3 startingSpherePosition = new Vector3(0, 0, 0);
-  Vector3 startSphereScale = new Vector3(0, 0, 0);
-  Quaternion startRotation = new Quaternion(0, 0, 0, 0);
-  bool leftStart = false;
-  bool rightStart = false;
+  Vector3 leftPreviousPosition = new Vector3(0, 0, 0);
+  Vector3 rightPreviousPosition = new Vector3(0, 0, 0);
+  Vector3 previousSpherePosition = new Vector3(0, 0, 0);
+  float previousSphereScale = 0;
+  Quaternion previousSphereRotation = new Quaternion(0, 0, 0, 0);
 
   void Update()
   {
     leftDevice.TryGetFeatureValue(CommonUsages.gripButton, out bool leftGrip);
     rightDevice.TryGetFeatureValue(CommonUsages.gripButton, out bool rightGrip);
 
-    if (!leftGrip) leftStart = false;
-    if (!rightGrip) rightStart = false;
-
-    if ((leftGrip || rightGrip) && (!leftStart && !rightStart))
-    {
-      startingSpherePosition = transform.position;
-      startSphereScale = transform.localScale;
-      startRotation = transform.rotation;
-    }
-
-    if (leftGrip && !leftStart)
-    {
-      leftStart = true;
-      leftStartingHandPosition = leftController.transform.position;
-    }
-
-    if (rightGrip && !rightStart)
-    {
-      rightStart = true;
-      rightStartingHandPosition = rightController.transform.position;
-    }
 
     if (leftGrip && rightGrip)
     {
-      Vector3 startVector = leftStartingHandPosition - rightStartingHandPosition;
-      Vector3 startMidpoint = (leftStartingHandPosition + rightStartingHandPosition) / 2;
+      Vector3 leftHand = leftController.transform.position;
+      Vector3 rightHand = rightController.transform.position;
 
-      Vector3 endVector = leftController.transform.position - rightController.transform.position;
-      Vector3 endMidpoint = (leftController.transform.position + rightController.transform.position) / 2;
+      float deltaScale = (leftHand - rightHand).magnitude / (leftPreviousPosition - rightPreviousPosition).magnitude;
+      float newScale = deltaScale * previousSphereScale;
 
-      float startDistance = startVector.magnitude;
-      float endDistance = endVector.magnitude;
+      transform.position = leftHand + (previousSpherePosition - leftHand) * (newScale / previousSphereScale);
 
-      float scale = endDistance / startDistance;
-      Vector3 translation = endMidpoint - startMidpoint;
-
-      Quaternion rotation = Quaternion.Lerp(Quaternion.identity, Quaternion.FromToRotation(startVector, endVector), 0.5f);
-
-      transform.position = startingSpherePosition + translation;
-      transform.localScale = startSphereScale * scale;
-      transform.rotation = startRotation * rotation;
+      transform.localScale = newScale * new Vector3(1, 1, 1);
+      transform.rotation = Quaternion.FromToRotation(Vector3.Normalize(leftPreviousPosition - rightPreviousPosition), Vector3.Normalize(leftHand - rightHand)) * previousSphereRotation;
     }
     else if (leftGrip)
     {
-      transform.position = startingSpherePosition + (leftController.transform.position - leftStartingHandPosition);
+      transform.position = previousSpherePosition + (leftController.transform.position - leftPreviousPosition);
     }
     else if (rightGrip)
     {
 
-      transform.position = startingSpherePosition + (rightController.transform.position - rightStartingHandPosition);
+      transform.position = previousSpherePosition + (rightController.transform.position - rightPreviousPosition);
     }
+
+    leftPreviousPosition = leftController.transform.position;
+    rightPreviousPosition = rightController.transform.position;
+    previousSpherePosition = transform.position;
+    previousSphereScale = transform.localScale.x;
+    previousSphereRotation = transform.rotation;
   }
 }
