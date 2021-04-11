@@ -32,43 +32,37 @@ public class SphereContoller : MonoBehaviour
 
   Vector3 leftPreviousPosition = new Vector3(0, 0, 0);
   Vector3 rightPreviousPosition = new Vector3(0, 0, 0);
-  Vector3 previousSpherePosition = new Vector3(0, 0, 0);
-  float previousSphereScale = 0;
-  Quaternion previousSphereRotation = new Quaternion(0, 0, 0, 0);
 
   void Update()
   {
     leftDevice.TryGetFeatureValue(CommonUsages.gripButton, out bool leftGrip);
     rightDevice.TryGetFeatureValue(CommonUsages.gripButton, out bool rightGrip);
 
+    Vector3 leftPosition = leftController.transform.position;
+    Vector3 rightPosition = rightController.transform.position;
+
+    Vector3 hands = leftPosition - rightPosition;
+    Vector3 previousHands = leftPreviousPosition - rightPreviousPosition;
 
     if (leftGrip && rightGrip)
     {
-      Vector3 leftHand = leftController.transform.position;
-      Vector3 rightHand = rightController.transform.position;
+      float distanceRatio = hands.magnitude / previousHands.magnitude;
 
-      float deltaScale = (leftHand - rightHand).magnitude / (leftPreviousPosition - rightPreviousPosition).magnitude;
-      float newScale = deltaScale * previousSphereScale;
-
-      transform.position = leftHand + (previousSpherePosition - leftHand) * (newScale / previousSphereScale);
-
-      transform.localScale = newScale * new Vector3(1, 1, 1);
-      transform.rotation = Quaternion.FromToRotation(Vector3.Normalize(leftPreviousPosition - rightPreviousPosition), Vector3.Normalize(leftHand - rightHand)) * previousSphereRotation;
+      transform.position = distanceRatio * (transform.position - leftPosition) + leftPosition;
+      transform.localScale = distanceRatio * transform.localScale;
+      transform.rotation = Quaternion.Lerp(Quaternion.identity, Quaternion.FromToRotation(previousHands, hands), 1 / transform.localScale.x) * transform.rotation;
     }
     else if (leftGrip)
     {
-      transform.position = previousSpherePosition + (leftController.transform.position - leftPreviousPosition);
+      transform.position += (leftPosition - leftPreviousPosition);
     }
     else if (rightGrip)
     {
 
-      transform.position = previousSpherePosition + (rightController.transform.position - rightPreviousPosition);
+      transform.position += (rightPosition - rightPreviousPosition);
     }
 
-    leftPreviousPosition = leftController.transform.position;
-    rightPreviousPosition = rightController.transform.position;
-    previousSpherePosition = transform.position;
-    previousSphereScale = transform.localScale.x;
-    previousSphereRotation = transform.rotation;
+    leftPreviousPosition = leftPosition;
+    rightPreviousPosition = rightPosition;
   }
 }
