@@ -34,6 +34,11 @@ jobs:
           unityVersion: 2020.3.0f1
           githubToken: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Release
+        uses: softprops/action-gh-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - uses: actions/upload-artifact@v2
         with:
           name: Build
