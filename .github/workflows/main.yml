@@ -34,14 +34,14 @@ jobs:
           unityVersion: 2020.3.0f1
           githubToken: ${{ secrets.GITHUB_TOKEN }}
           
-      - name: List Everything
-        run: tree
+      - name: ZIP
+        run: zip -r build.zip build
 
       - name: Release
         uses: softprops/action-gh-release@v1
         if: startsWith(github.ref, 'refs/tags/')
         with:
-          files: "*"
+          files: build.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
