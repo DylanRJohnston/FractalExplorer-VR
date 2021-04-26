@@ -33,6 +33,9 @@ jobs:
           targetPlatform: StandaloneWindows64
           unityVersion: 2020.3.0f1
           githubToken: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: List Everything
+        run: tree
 
       - name: Release
         uses: softprops/action-gh-release@v1
